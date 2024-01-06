@@ -24,6 +24,9 @@ class Chat:
         self.chain = None
         self.message_count = 0
 
+    def __del__(self):
+        print(f"Object {self.name} destroyed")
+
     def create_embeddings(chunks, embedding_model, storing_path="vectorstore"):
         vectorstore = FAISS.from_documents(chunks, embedding_model)
         vectorstore.save_local(storing_path)
@@ -98,18 +101,13 @@ class Chat:
             with open(embeddings_file_path, 'wb') as embeddings_file:
                 pickle.dump(embeddings, embeddings_file)
         vector_store_file = "vector_store"
-        #if os.path.exists(vector_store_file):
-            #vector_store = FAISS.load_local(vector_store_file, embeddings=embeddings)
-        #else:
-        vector_store = FAISS.from_documents(text_chunks, embedding=embeddings)
-            #vector_store.save_local(vector_store_file)
+        if os.path.exists(vector_store_file):
+            vector_store = FAISS.load_local(vector_store_file, embeddings=embeddings)
+        else:
+            vector_store = FAISS.from_documents(text_chunks, embedding=embeddings)
+            vector_store.save_local(vector_store_file)
 
         self.create_conversational_chain(vector_store)
-
-    def delete_chat(self):
-        print(f"Chat {self.chat_id} deleted!")
-        self.history.clear()
-        self.message_count = 0
 
     def rename_chat(self, new_chat_id):
         self.chat_id = new_chat_id
@@ -120,7 +118,7 @@ class Chat:
             print("Chat deleted after reaching the maximum number of messages.")
             exit()
         else:
-            # Implement chat history saving logic, e.g., save to a file or database
+            # I will implement chat saving logic here, will prolly back it all up into a database
             print(f"Chat {self.chat_id} history saved!")
 
 
@@ -134,9 +132,6 @@ def main():
             break  
 
         output = chat.conversation_chat(user_input)
-
-        #chat.save_chat_history()
-        #chat.rename_chat(new_chat_id="new_unique_id")
 
         print(f"Bot: {output}")
 
