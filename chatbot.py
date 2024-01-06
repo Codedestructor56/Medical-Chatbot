@@ -17,7 +17,6 @@ import uuid
 
 class Chat:
     MAX_MESSAGES = 15
-    EMBEDDINGS_FILE = "embeddings.pkl"
     def __init__(self):
         self.chat_id = str(uuid.uuid4())
         self.history = []
@@ -51,7 +50,7 @@ class Chat:
                 if system_platform == "Linux" or system_platform == "Darwin":
                     subprocess.run(["ollama", "pull", "mistral"], check=True)
                 elif system_platform == "Windows":
-                    subprocess.run(["ollama.bat", "pull", "mistral"], check=True)
+                    return "Can't run on native windows"
                 else:
                     print("Unsupported operating system.")
                     return
