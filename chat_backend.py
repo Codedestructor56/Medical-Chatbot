@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, abort
 from flask_socketio import SocketIO, emit
 from chatbot import Chat
 
@@ -10,7 +10,10 @@ class Chatbot:
     def __init__(self):
         self.chat = None
 
-    def process_query(self, user_input):
+    def process_query(self, user_input, chat_id):
+        if self.chat is None or self.chat.chat_id != chat_id:
+            abort(404, f"Chat with ID {chat_id} does not exist")
+
         try:
             response = self.chat.conversation_chat(user_input)
             return {
@@ -18,8 +21,8 @@ class Chatbot:
                 'bot_response': response
             }
         except AttributeError as e:
-            return {"error":"You haven't initialized the conversation yet, use the /create_new_chat endpoint to do that first"}
-        
+            return {"error": "You haven't initialized the conversation yet, use the /create_new_chat endpoint to do that first"}
+
     def add_new_chat(self):
         self.chat = Chat()
         self.chat.create_chat(file_path='data/medquad.txt')
@@ -31,8 +34,10 @@ chatbot = Chatbot()
 def user_message():
     data = request.get_json()
     user_input = data.get('message')
+    chat_id = data.get('chat_id')
 
-    response_data = chatbot.process_query(user_input)
+    response_data = chatbot.process_query(user_input, chat_id)
+    
     if request.environ.get('werkzeug.server.shutdown') is None:
         return response_data
     else:
@@ -40,13 +45,13 @@ def user_message():
 
 @app.route('/delete_chat', methods=['POST'])
 def delete_chat():
-    chatbot.chat.delete_chat()
+    del chatbot.chat
     return {'status': 'Chat deleted'}
 
 @app.route('/create_new_chat', methods=['POST'])
 def create_new_chat():
     chatbot.add_new_chat()
-    id= chatbot.chat.chat_id
+    id = chatbot.chat.chat_id
     return {'status': f"New chat created. ID: {id}"}
 
 @socketio.on('connect')
