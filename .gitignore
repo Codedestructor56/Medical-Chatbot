@@ -1,0 +1,47 @@
+# Ignore pycache, environment files, and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment
+venv/
+
+# Ignore environment configuration files
+.env
+
+# Ignore generated files
+*.pyc
+*.pyo
+*.pyd
+*.pyz
+*.pyw
+*.pyc
+*.pyo
+*.pyd
+*.pyz
+*.pyw
+
+# Ignore user-specific files
+*.rsuser
+*.pyc
+*.pyo
+*.pyd
+*.pyz
+*.pyw
+
+# Ignore logs and databases
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Ignore system files and directories
+.DS_Store
+Thumbs.db
+
+# Ignore IDE and editor specific files
+.idea/
+.vscode/
+*.sublime*
+*.pycharm*
