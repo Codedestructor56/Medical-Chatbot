@@ -25,7 +25,7 @@ class Chat:
         self.message_count = 0
 
     def __del__(self):
-        print(f"Object {self.name} destroyed")
+        print(f"Object {self.chat_id} destroyed")
 
     def create_embeddings(chunks, embedding_model, storing_path="vectorstore"):
         vectorstore = FAISS.from_documents(chunks, embedding_model)
