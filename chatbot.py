@@ -111,10 +111,14 @@ class Chat:
     def rename_chat(self, new_chat_id):
         self.chat_id = new_chat_id
 
+    def reset_chat(self):
+        self.history={}
+        self.message_count=0
+
     def save_chat_history(self):
         if self.message_count >= self.MAX_MESSAGES:
-            self.delete_chat()
-            print("Chat deleted after reaching the maximum number of messages.")
+            self.reset_chat()
+            print("Chat reset after reaching the maximum number of messages.")
             exit()
         else:
             # I will implement chat saving logic here, will prolly back it all up into a database

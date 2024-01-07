@@ -5,10 +5,12 @@ __pycache__/
 *.pyd
 
 # Ignore virtual environment
-venv/
+env/
 
 # Ignore environment configuration files
 .env
+
+vector_store/
 
 # Ignore generated files
 *.pyc
