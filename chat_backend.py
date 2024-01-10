@@ -1,6 +1,6 @@
 from flask import Flask, request, abort, jsonify
-from flask_socketio import SocketIO, emit
-from chatbot import Chat
+from flask_socketio import SocketIO
+from user_auth import User
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -8,14 +8,19 @@ socketio = SocketIO(app)
 
 class Chatbot:
     def __init__(self):
-        self.chats = {} 
+        self.users = {}
 
-    def process_query(self, user_input, chat_id):
-        if chat_id not in self.chats:
-            abort(404, f"Chat with ID {chat_id} does not exist")
+    def process_query(self, user_input, user_id, chat_id):
+        if user_id not in self.users:
+            abort(404, f"User with ID {user_id} does not exist")
+
+        user = self.users[user_id]
+
+        if chat_id not in user.chats:
+            abort(404, f"Chat with ID {chat_id} does not exist for User {user_id}")
 
         try:
-            response = self.chats[chat_id].conversation_chat(user_input)
+            response = user.chats[chat_id].conversation_chat(user_input)
             return {
                 'chat_id': chat_id,
                 'bot_response': response
@@ -23,65 +28,82 @@ class Chatbot:
         except AttributeError as e:
             return {"error": "You haven't initialized the conversation yet, use the /create_new_chat endpoint to do that first"}
 
-    def add_new_chat(self, file_path='data/medquad.txt'):
-        chat = Chat()
-        chat.create_chat(file_path=file_path)
-        self.chats[chat.chat_id] = chat
-        return chat.chat_id
-
-    def delete_chat(self, chat_id):
-        if chat_id in self.chats:
-            del self.chats[chat_id]
-            return {'status': f'Chat with ID {chat_id} deleted'}
-        else:
-            abort(404, f"Chat with ID {chat_id} does not exist")
+    def create_user(self):
+        user = User()
+        user_id= user.user_id
+        self.users[user_id] = user
+        return {'status': f'User {user_id} created.'}
     
-    def get_chats(self):
-        chat_data = {}
-        for chat_id, chat_instance in self.chats.items():
-            chat_data[chat_id] = {
-                'chat_id': chat_id,
-                'history': chat_instance.history,
-                'message_count': chat_instance.message_count
-            }
-        return chat_data
+    def delete_chat(self, user_id, chat_id):
+        if user_id not in self.users:
+            return {'error': f'User with ID {user_id} does not exist.'}
 
+        user = self.users[user_id]
+        if chat_id not in user.chats:
+            return {'error': f'Chat with ID {chat_id} does not exist for User {user_id}.'}
+
+        user.delete_chat(chat_id)
+        return {'status': f'Chat with ID {chat_id} deleted for User {user_id}.'}
+
+    def delete_user(self, user_id):
+        if user_id not in self.users:
+            return {'error': f'User with ID {user_id} does not exist.'}
+
+        del self.users[user_id]
+        return {'status': f'User with ID {user_id} deleted.'}
+    
+    def get_users(self):
+        return list(self.users.keys())
+    
 chatbot = Chatbot()
 
-@app.route('/user_message', methods=['POST'])
-def user_message():
-    data = request.get_json()
-    user_input = data.get('message')
-    chat_id = data.get('chat_id')
-
-    response_data = chatbot.process_query(user_input, chat_id)
-    
-    if request.environ.get('werkzeug.server.shutdown') is None:
-        return jsonify(response_data)
-    else:
-        emit('bot_response', response_data)
-
-@app.route('/delete_chat/<string:chat_id>', methods=['POST'])
-def delete_chat(chat_id):
-    response_data = chatbot.delete_chat(chat_id)
+@app.route('/create_new_user', methods=['POST'])
+def create_new_user():
+    response_data = chatbot.create_user()
     return jsonify(response_data)
 
-@app.route('/create_new_chat', methods=['POST'])
-def create_new_chat():
-    chat_id = chatbot.add_new_chat()
-    return jsonify({'status': f"New chat created. ID: {chat_id}"})
+@app.route("/delete_user/<string:user_id>", methods=['POST'])
+def delete_user(user_id):
+    return chatbot.delete_user(user_id=user_id)
 
-@app.route("/get_chat_ids", methods=['GET'])
-def get_chats():
-    return jsonify(chatbot.get_chats())
+@app.route('/get_message', methods=['POST'])
+def get_message():
+    data = request.get_json()
+    query = data.get("message")
+    user_id = data.get("user_id")
+    chat_id = data.get("chat_id")
+    response_data = chatbot.process_query(user_input=query, user_id=user_id, chat_id=chat_id)
+    return jsonify(response_data)
 
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
+@app.route("/delete_chat/<string:user_id>/<string:chat_id>",methods=["POST"])
+def delete_chat(user_id,chat_id):
+    chatbot.delete_chat(user_id=user_id,chat_id=chat_id)
+    return {"status":f"Chat {chat_id} deleted"}
+    
+@app.route('/create_new_chat/<string:user_id>', methods=['POST'])
+def create_new_chat(user_id):
+    response_data = chatbot.create_user()
+    if 'error' in response_data:
+        return jsonify(response_data)
+    try:
+        user = chatbot.users[user_id]
+        chat_id_response = user.create_chat()
+        return jsonify(chat_id_response)
+    except KeyError:
+        return {"error":"Enter a valid user id"}
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
+@app.route("/get_chat_ids/<string:user_id>", methods=['GET'])
+def get_chats(user_id):
+    if user_id not in chatbot.users:
+        return {'error': f'User with ID {user_id} does not exist'}
+
+    user = chatbot.users[user_id]
+    user_chats = user.get_user_chats()
+    return jsonify(user_chats)
+
+@app.route("/get_user_ids",methods=['POST'])
+def get_users():
+    return jsonify(chatbot.get_users())
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)

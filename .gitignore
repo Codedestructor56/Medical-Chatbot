@@ -10,6 +10,7 @@ env/
 # Ignore environment configuration files
 .env
 
+helper.txt
 vector_store/
 
 # Ignore generated files
