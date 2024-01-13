@@ -12,6 +12,7 @@ env/
 
 helper.txt
 vector_store/
+configs.py
 
 # Ignore generated files
 *.pyc

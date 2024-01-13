@@ -4,8 +4,10 @@ import uuid
 class User:
     MAX_CHATS_PER_USER = 5
 
-    def __init__(self):
+    def __init__(self, username, password):
         self.user_id = str(uuid.uuid4())
+        self.username = username
+        self.password = password
         self.chats = {}
 
     def create_chat(self, file_path='data/medquad.txt'):
@@ -33,3 +35,24 @@ class User:
                 'message_count': chat_instance.message_count
             }
         return chat_data
+
+    def to_dict(self):
+        return {
+            "_id": self.user_id,
+            "username": self.username,
+            "password": self.password,
+            "chats": [
+                {
+                    "chat_id": chat_id,
+                    "chat_history": chat_instance.history,
+                    "message_count": chat_instance.message_count
+                }
+                for chat_id, chat_instance in self.chats.items()
+            ]
+        }
+
+    def add_to_database(self, database):
+        user_data = self.to_dict()
+        database.insert_user_data(user_data)
+        return {'status': f'User {self.user_id} added to the database.'}
+

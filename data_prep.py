@@ -7,7 +7,7 @@ def csv_to_text(input_csv_path, output_text_path):
         rows = list(csv_reader)
 
     random.shuffle(rows)
-    rows = rows[:2000]
+    rows = rows[:5000]
 
     with open(output_text_path, 'w', encoding='utf-8') as text_file:
         text_file.write("This is a file which contains details about medical conditions, diagnoses, and histories.\n")
